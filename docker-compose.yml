@@ -1,9 +1,7 @@
-version: '3'
-
+version: '3.3'
 networks:
   onlyoffice:
     driver: bridge
-
 volumes:
   document_data: null
   document_log: null
@@ -13,7 +11,6 @@ volumes:
   mysql_data: null
   nextcloud: null
   moodle: null
-
 services:
   mysql:
     container_name: mysql
@@ -29,7 +26,6 @@ services:
       - './config/mysql/conf.d:/etc/mysql/conf.d'
       - './config/mysql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d'
       - 'mysql_data:/var/lib/mysql'
-
   onlyoffice-document-server:
     container_name: onlyoffice-document-server
     image: 'onlyoffice/documentserver:latest'
@@ -38,7 +34,7 @@ services:
     restart: always
     networks:
       - onlyoffice
-    # environment:
+    environment:
       - VIRTUAL_HOST=onlyoffice-document.test
     expose:
       - '80'
@@ -48,54 +44,21 @@ services:
       - 'document_log:/var/log/onlyoffice'
       - './document_fonts:/usr/share/fonts/truetype/custom'
       - 'document_forgotten:/var/lib/onlyoffice/documentserver/App_Data/cache/files/forgotten'
-
   nginx-proxy:
     container_name: nginx-proxy
-    image: jwilder/nginx-proxy:alpine
+    image: 'jwilder/nginx-proxy:alpine'
     stdin_open: true
     tty: true
     restart: always
     ports:
       - '80:80'
     volumes:
-      - /var/run/docker.sock:/tmp/docker.sock:ro
-      # - nextcloud:/var/www/html:ro
+      - '/var/run/docker.sock:/tmp/docker.sock:ro'
     networks:
       - onlyoffice
-
-  onlyoffice-community-server:
-    container_name: onlyoffice-community-server
-    image: 'onlyoffice/communityserver:latest'
-    depends_on:
-      - mysql
-      - onlyoffice-document-server
-      - nginx-proxy
-    environment:
-      - DOCUMENT_SERVER_PORT_80_TCP_ADDR=onlyoffice-document-server
-      - MYSQL_SERVER_ROOT_PASSWORD=my-secret-pw
-      - MYSQL_SERVER_DB_NAME=onlyoffice
-      - MYSQL_SERVER_HOST=mysql
-      - MYSQL_SERVER_USER=onlyoffice_user
-      - MYSQL_SERVER_PASS=onlyoffice_pass
-      - VIRTUAL_HOST=onlyoffice.test
-    networks:
-      - onlyoffice
-    expose:
-      - '80'
-      - '443'
-      - '5222'
-    stdin_open: true
-    tty: true
-    restart: always
-    volumes:
-      - 'community_data:/var/www/onlyoffice/Data'
-      - 'community_log:/var/log/onlyoffice'
-      - 'document_data:/var/www/onlyoffice/DocumentServerData'
-      - './certs:/var/www/onlyoffice/Data/certs'
-
   nextcloud:
     container_name: nextcloud
-    image: nextcloud:apache
+    image: 'nextcloud:apache'
     environment:
       - VIRTUAL_HOST=nextcloud.test
       - MYSQL_HOST=mysql
@@ -109,42 +72,18 @@ services:
       - mysql
       - nginx-proxy
     volumes:
-      - nextcloud:/var/www/html
+      - 'nextcloud:/var/www/html'
     stdin_open: true
     tty: true
     restart: always
     networks:
       - onlyoffice
-
-  # nextcloud:
-  #   container_name: nextcloud
-  #   image: nextcloud:fpm
-  #   stdin_open: true
-  #   tty: true
-  #   restart: always
-  #   environment:
-  #     - VIRTUAL_HOST=nextcloud.test
-  #     - MYSQL_HOST=mysql
-  #     - MYSQL_PASSWORD=nextcloud_pass
-  #     - MYSQL_DATABASE=nextcloud
-  #     - MYSQL_USER=nextcloud_user
-  #   expose:
-  #     - '80'
-  #     - '9000'
-  #   depends_on:
-  #     - mysql
-  #     - nginx-proxy
-  #   networks:
-  #     - onlyoffice
-  #   volumes:
-  #     - nextcloud:/var/www/html
-
   moodle:
     container_name: moodle
     build:
       context: ../docker-moodle
       dockerfile: Dockerfile
-    image: moodle:v34
+    image: 'moodle:v34'
     environment:
       - VIRTUAL_HOST=moodle.test
       - MYSQL_HOST=mysql
@@ -158,11 +97,10 @@ services:
       - mysql
       - nginx-proxy
     volumes:
-      - moodle:/moodle/data
-      - ./moodle-config.php:/var/www/html/config.php:ro
+      - 'moodle:/moodle/data'
+      - './moodle-config.php:/var/www/html/config.php:ro'
     stdin_open: true
     tty: true
     restart: always
     networks:
       - onlyoffice
-
